@@ -5,7 +5,7 @@ Created on Fri Jun 19 10:46:32 2015
 
 @author: ruizca
 """
-from __future__ import print_function
+#from __future__ import print_function
 
 import os
 import argparse
@@ -26,8 +26,6 @@ from astropy import units as u
 
 import sherpa.astro.ui as shp
 from sherpa.astro import datastack as dsmod
-#from pychips import *
-#from pychips.hlui import *
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
@@ -422,8 +420,6 @@ if __name__ == '__main__' :
     parser.add_argument('-folder', dest='folder', action='store',
                         default='fit_results', 
                         help='Folder for saving fits results')
-    
-    args = parser.parse_args()
 
-    main(args)
+    main(parser.parse_args())
     

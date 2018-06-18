@@ -8,11 +8,10 @@ Created on Fri Jun 12 12:40:55 2015
 import os
 import argparse
 
-import numpy as np
 from tqdm import trange
-
 from astropy.io import fits as pyfits
 from astropy.time import Time
+import numpy as np
 
 
 def get_epoch(obsdate, limits):
@@ -219,18 +218,18 @@ def main(args):
 
 if __name__ == '__main__' :
     # Parser for shell parameters
-    parser = argparse.ArgumentParser(description='X-ray spectral fitting for xmmfitcatz using BXA.')
+    parser = argparse.ArgumentParser(description='Create X-ray pseudospectra.')
                                              
-    parser.add_argument('--catalogue', dest='sources_table', action='store',
-                        default=None, 
+    parser.add_argument('--catalogue', dest='sources_table', 
+                        action='store', default=None, 
                         help='Full route to the detections catalogue.')
     
-    parser.add_argument('--camera', dest='detector', action='store',
-                        default='PN',
+    parser.add_argument('--camera', dest='detector', 
+                        action='store', default='PN',
                         help='EPIC detector for generating the spectra.')
 
-    parser.add_argument('--spec_folder', dest='dest_folder', action='store',
-                        default='./data/', 
+    parser.add_argument('--spec_folder', dest='dest_folder', 
+                        action='store', default='./data/', 
                         help='Folder for saving the generated spectra.')
     
     args = parser.parse_args()

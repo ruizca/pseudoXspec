@@ -30,7 +30,6 @@ def nh(ra, dec, equinox=2000.0) :
 
 def main(args):
     spec_folder = args.dest_folder
-    #sample_file = args.sources_table
 
     ### Find last fitted source
     try :
@@ -82,13 +81,10 @@ def main(args):
         except:
             print("No stack file!")
 
-        break
-        #if i>10:
-        #    break
 
 if __name__ == '__main__' :
     # Parser for shell parameters
-    parser = argparse.ArgumentParser(description='X-ray spectral fitting for xmmfitcatz using BXA.')
+    parser = argparse.ArgumentParser(description='Fitting X-ray pseudospectra')
                                              
     parser.add_argument('--catalogue', dest='sources_table', action='store',
                         default=None, 
@@ -101,6 +97,5 @@ if __name__ == '__main__' :
     parser.add_argument('--lsf', dest='file_lastsource', action='store',
                         default='last_source.dat',
                         help='File to store the last fitted source.')
-    
-    args = parser.parse_args()
-    main(args)
+
+    main(parser.parse_args())
