@@ -41,14 +41,15 @@ def main(args):
         
     ### Load data of detections
     table = Table.read(args.sources_table)
-    ra = table['XMM_RA'][first_source:]
-    dec = table['XMM_DEC'][first_source:]
-    obsid = table['OBS_ID'][first_source:]
-    detid = table['DETID'][first_source:]
-    z = table['PHOT_Z'][first_source:]
+    table = table[first_source:]
+    ra = table['XMM_RA']
+    dec = table['XMM_DEC']
+    obsid = table['OBS_ID']
+    detid = table['DETID']
+    z = table[args.zcol]
     
     args_str = "-z {:f} -nh {} -obsid {} -detid {} "    
-    for i in trange(len(detid)):
+    for i in trange(detid.size):
         ## Find spectra of interest for this detection
         obs_folder = os.path.join(spec_folder, obsid[i])
         spec_files = glob.glob("{}/{}_SRSPEC_*.pha".format(obs_folder, detid[i]))    
@@ -94,6 +95,10 @@ if __name__ == '__main__' :
                         default='./data/spectra/', 
                         help='Folder for saving the generated spectra.')
 
+    parser.add_argument('--zcol', dest='zcol', action='store',
+                        default='z', 
+                        help='Name of the redshift column in the catalogue.')
+                        
     parser.add_argument('--lsf', dest='file_lastsource', action='store',
                         default='last_source.dat',
                         help='File to store the last fitted source.')
