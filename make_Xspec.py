@@ -101,6 +101,13 @@ def main(args):
     
     hdulist.close()
     
+    # Identify count rates consistent with negative values
+    # and treat them as upper limits
+    mask = det_rate - det_rateErr < 0
+    upl_vals = (det_rate[mask] + det_rateErr[mask])/2
+    det_rate[mask] = upl_vals
+    det_rateErr[mask] = upl_vals
+
     # Define obs. mode
     obs_mode = np.zeros(len(obs_date), dtype='a3')
     

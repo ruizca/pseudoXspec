@@ -11,6 +11,7 @@ import os
 import glob
 import argparse
 import subprocess
+import logging
 
 #import numpy as np
 from tqdm import trange
@@ -57,7 +58,7 @@ def main(args):
         # Create stack file for existing spectra in the observation
         stack_file = 'spec_{}.lis'.format(detid[i])
         fp = open(stack_file, "w")
-        for spec in spec_files :
+        for spec in spec_files:
             fp.write(spec + '\n')
         fp.close()     
         
@@ -65,7 +66,7 @@ def main(args):
         fit_command = "./fit_Xspec.py "
         fit_args = args_str.format(z[i], nh(ra[i], dec[i]), 
                                    obsid[i], detid[i])
-        print(fit_command + fit_args)
+        logging.debug(fit_command + fit_args)
         
         try:
             subprocess.call(fit_command + fit_args, shell=True)
@@ -74,14 +75,15 @@ def main(args):
             fp.write(str(i+first_source))
             fp.close()            
         except:
-            print("Something went wrong fitting det. {}".format(detid[i]))
+            logging.error("Something went wrong fitting det. {}".format(detid[i]))
 
         try:
             os.remove(stack_file)
             #pass
         except:
-            print("No stack file!")
+            logging.warning("No stack file!")
 
+        break
 
 if __name__ == '__main__' :
     # Parser for shell parameters
