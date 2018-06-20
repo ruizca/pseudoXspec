@@ -298,7 +298,7 @@ def main(args):
     ds = dsmod.DataStack()
     ds.load_pha('@spec_{}.lis'.format(args.detid), use_errors=True)
     #dsmod.ignore_bad()
-    dsmod.ignore(":0.2,12:")
+    dsmod.ignore(":0.2,12.0:")
     
     ## Dictionaries for storing best-fit parameters and fluxes
     params = {"nHgal": args.galnH, 
@@ -364,7 +364,7 @@ def main(args):
         # Estimate fluxes and flux errors       
         shp.covar()
         dataScale = shp.get_covar_results().parmaxes
-        if np.all(np.isnan(dataScale)):
+        if all(d is None for d in dataScale):
             fx = calc_fluxes(shp.list_data_ids(), z=z)
             fluxes['fx'], fluxes['fx_obs'], fluxes['fx_int'] = fx[:,0]
 
