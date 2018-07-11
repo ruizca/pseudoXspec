@@ -303,7 +303,7 @@ def main(args):
     ## Dictionaries for storing best-fit parameters and fluxes
     params = {"nHgal": args.galnH, 
               "nH": None, "nH_ErrMin": None, "nH_ErrMax": None,
-              "PhoIndex": 2.0, "PhoIndex_ErrMin": None, "PhoIndex_ErrMax": None}
+              "PhoIndex": 1.9, "PhoIndex_ErrMin": None, "PhoIndex_ErrMax": None}
     fluxes = {"fx": None, "fx_ErrMin": None, "fx_ErrMax": None,
               "fx_obs": None, "fx_obs_ErrMin": None, "fx_obs_ErrMax": None,
               "fx_int": None, "fx_int_ErrMin": None, "fx_int_ErrMax": None,
@@ -317,7 +317,7 @@ def main(args):
     shp.set_par('abs1.redshift', val=z, frozen=True)
     shp.set_par('po1.redshift', val=z, frozen=True)
     
-    if len(shp.list_data_ids()) == 1:
+    if len(shp.list_data_ids()) == 1 or args.fixgamma:
         shp.set_par('po1.PhoIndex', val=params['PhoIndex'], frozen=True)
 
     properFit()        
@@ -349,7 +349,7 @@ def main(args):
             params['nH_ErrMax'] = nHmax
 
         # Get photon index errors                    
-        if len(shp.list_data_ids()) > 1:
+        if len(shp.list_data_ids()) > 1 and not args.fixgamma:
             dsmod.conf(po1.PhoIndex)
             confstats = shp.get_conf_results()
             params['PhoIndex'] = confstats.parvals[0]
@@ -420,6 +420,10 @@ if __name__ == '__main__' :
     parser.add_argument('-folder', dest='folder', action='store',
                         default='fit_results', 
                         help='Folder for saving fits results')
+
+    parser.add_argument('--fixGamma', dest='fixgamma', 
+                        action='store_true', default=False,
+                        help='Fit with a fixed photon index (1.9).')
 
     main(parser.parse_args())
     

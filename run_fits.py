@@ -17,17 +17,16 @@ import logging
 from tqdm import trange
 from astropy.table import Table
 
-def nh(ra, dec, equinox=2000.0) :
-    command = "nh " + str(equinox) + " " + str(ra) + " " + str(dec) + "> tmp"
-    os.system(command)
+def nh(ra, dec, equinox=2000.0):
+    command = 'nh {} {} {}'.format(equinox, ra, dec)
+    log = subprocess.check_output(command, shell=True)
 
-    nhtemp = open("tmp", "r")
-    for line in nhtemp :
-        if line.startswith("  LAB >> Weighted") :
+    for line in log.splitlines():
+        if 'LAB >> Weighted' in line:
             nhval = line.split()[-1]
-    os.remove("tmp")
-        
+
     return float(nhval)
+
 
 def main(args):
     spec_folder = args.dest_folder
@@ -49,7 +48,10 @@ def main(args):
     detid = table['DETID']
     z = table[args.zcol]
     
-    args_str = "-z {:f} -nh {} -obsid {} -detid {} "    
+    args_str = "-z {:f} -nh {} -obsid {} -detid {} "
+    if args.fixgamma:
+        args_str = ' '.join([args_str, '--fixGamma'])
+
     for i in trange(detid.size):
         ## Find spectra of interest for this detection
         obs_folder = os.path.join(spec_folder, obsid[i])
@@ -83,7 +85,6 @@ def main(args):
         except:
             logging.warning("No stack file!")
 
-        break
 
 if __name__ == '__main__' :
     # Parser for shell parameters
@@ -104,5 +105,9 @@ if __name__ == '__main__' :
     parser.add_argument('--lsf', dest='file_lastsource', action='store',
                         default='last_source.dat',
                         help='File to store the last fitted source.')
+
+    parser.add_argument('--fixGamma', dest='fixgamma', 
+                        action='store_true', default=False,
+                        help='Fit with a fixed photon index (1.9).')
 
     main(parser.parse_args())
