@@ -13,7 +13,6 @@ import argparse
 import subprocess
 import logging
 
-#import numpy as np
 from tqdm import trange
 from astropy.table import Table
 
@@ -22,7 +21,7 @@ def nh(ra, dec, equinox=2000.0):
     log = subprocess.check_output(command, shell=True)
 
     for line in log.splitlines():
-        if 'LAB >> Weighted' in line:
+        if 'LAB >> Weighted' in line.decode('utf-8'):
             nhval = line.split()[-1]
 
     return float(nhval)
@@ -42,13 +41,13 @@ def main(args):
     ### Load data of detections
     table = Table.read(args.sources_table)
     table = table[first_source:]
-    ra = table['XMM_RA']
-    dec = table['XMM_DEC']
+    ra = table[args.racol]
+    dec = table[args.deccol]
     obsid = table['OBS_ID']
     detid = table['DETID']
     z = table[args.zcol]
     
-    args_str = "-z {:f} -nh {} -obsid {} -detid {} "
+    args_str = '-z {:f} -nh {} -obsid {} -detid {} '
     if args.fixgamma:
         args_str = ' '.join([args_str, '--fixGamma'])
 
@@ -97,6 +96,14 @@ if __name__ == '__main__' :
     parser.add_argument('--spec_folder', dest='dest_folder', action='store',
                         default='./data/spectra/', 
                         help='Folder for saving the generated spectra.')
+
+    parser.add_argument('--racol', dest='racol', action='store',
+                        default='XMM_RA', 
+                        help='Name of the RA column in the catalogue.')
+
+    parser.add_argument('--deccol', dest='deccol', action='store',
+                        default='XMM_DEC', 
+                        help='Name of the Dec column in the catalogue.')
 
     parser.add_argument('--zcol', dest='zcol', action='store',
                         default='z', 
