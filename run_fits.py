@@ -32,6 +32,7 @@ def get_last_source_fit(last_source_file):
     try:
         with open(last_source_file, "r") as fp:
             first_source = int(fp.readline())
+
     except FileNotFoundError:
         first_source = 0
 
@@ -65,7 +66,7 @@ def get_sources_data(table_name, racol, deccol, zcol, first_source=0):
 
 
 def stack_spectra(obsid, detid, spec_folder):
-    ## Find spectra of interest for this detection
+    # Find spectra of interest for this detection
     obs_folder = os.path.join(spec_folder, obsid)
     spec_files = glob.glob("{}/{}_SRSPEC_*.pha".format(obs_folder, detid))
 
@@ -101,15 +102,12 @@ def main(args):
     results_folder = args.results_folder
     lastsource_file = args.file_lastsource
 
-    ## Find last fitted source
     first_source = get_last_source_fit(lastsource_file)
-
-    ## Check if results_folder exists
     if first_source == 0:
         check_results_folder(results_folder)
 
     ra, dec, obsid, detid, z = get_sources_data(args.sources_table, args.racol,
-                                                args.deccol, args.zcol)
+                                                args.deccol, args.zcol, first_source)
 
     for i in trange(detid.size):
         stack_file = stack_spectra(obsid[i], detid[i], spec_folder)
