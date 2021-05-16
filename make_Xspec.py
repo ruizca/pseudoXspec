@@ -45,13 +45,20 @@ def set_output_path(dest_folder):
     return spec_path
 
 
+def set_detector(detector):
+    try:
+        return Detector[detector]
+    except KeyError:
+        raise ValueError(f"Unknown detector: {detector}")
+
+
 def get_epoch_limits(detector):
     return Time(EPOCH_LIMITS[detector.type], format="iso")
 
 
 def _load_table(sample_file):
     try:
-        return Table.read(sample_file, memmap=True)[:100]
+        return Table.read(sample_file, memmap=True)
 
     except FileNotFoundError:
         raise ValueError(f"Error: table file not found: {sample_file}!")
@@ -262,7 +269,7 @@ def save_spec(spec, obsid, detid, detector, output_path):
 
 def main(args):
     output_path = set_output_path(args.output_folder)
-    detector = Detector[args.detector]
+    detector = set_detector(args.detector)
     epoch_limits = get_epoch_limits(detector)
 
     #### Load counts and ancillary data from the catalogue
