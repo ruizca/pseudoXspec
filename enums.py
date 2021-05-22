@@ -15,7 +15,10 @@ class Submodes(Enum):
     PrimeFullWindow = "ff"
     PrimeFullWindowExtended = "ef"
     PrimeLargeWindow = "lw"
+    PrimeSmallWindow = "sw"
     UNDEFINED = "UND"
+    #ti - timing mode
+    #bu - burst mode
 
 
 class Ebands(Enum):
