@@ -37,12 +37,12 @@ EPOCH_LIMITS = {
 }
 
 
-def set_output_path(dest_folder):
-    spec_path = Path(dest_folder, "spectra")
-    if not spec_path.exists():
-        spec_path.mkdir()
+def set_output_path(output_folder):
+    output_path = Path(output_folder)
+    if not output_path.exists():
+        output_path.mkdir()
 
-    return spec_path
+    return output_path
 
 
 def set_detector(detector):
@@ -59,7 +59,6 @@ def get_epoch_limits(detector):
 def _load_table(sample_file):
     try:
         return Table.read(sample_file, memmap=True)
-
     except FileNotFoundError:
         raise ValueError(f"Error: table file not found: {sample_file}!")
 
@@ -110,6 +109,9 @@ def _get_count_rates(sample_table, detector):
         count_rates, count_rates_err
     )
 
+    if np.any(count_rates_err <= 0):
+        print("Zeros in errors!")
+
     return count_rates, count_rates_err
 
 
@@ -153,7 +155,7 @@ def set_rmf_file(
 ):
     epoch = _get_epoch(obsdate, limits)
     if detector.type == "pn":
-        filename = f"epn_{epoch}_{obsmode}20_sdY9_v{rmfversion}.rmf"
+        filename = f"epn_{epoch}_{obsmode.strip()}20_sdY9_v{rmfversion}.rmf"
     else:
         filename = f"{detector.name.lower()}_{epoch}_im_pall_o.rmf"
 
@@ -161,7 +163,7 @@ def set_rmf_file(
 
 
 def set_arf_file(detector, filter):
-    return Path("calib", "ARF", f"{detector.long[1:]}_{filter}.arf")
+    return Path("calib", "ARF", f"{detector.long[1:]}_{filter.strip()}.arf")
 
 
 def _read_rmf(rmf_file):
@@ -235,11 +237,11 @@ def set_spec_fits(channels, rate, rate_err, quality, grouping):
     return fits.BinTableHDU.from_columns(cols)
 
 
-def update_spec_fits_header(spec, detector, rsp_file, arf_file, nchannels):
+def update_spec_fits_header(spec, detector, filter, rsp_file, arf_file, nchannels):
     spec.header.set("EXTNAME", "SPECTRUM")
     spec.header.set("TELESCOP", "XMM")
     spec.header.set("INSTRUME", detector.long)
-    spec.header.set("FILTER", "NONE")
+    spec.header.set("FILTER", filter)
     spec.header.set("EXPOSURE", 1.0)
     spec.header.set("BACKFILE", "NONE")
     spec.header.set("CORRFILE", "NONE")
@@ -315,7 +317,7 @@ def main(args):
             spec_channels, spec_rate, spec_rate_err, spec_quality, spec_grouping
         )
         spec = update_spec_fits_header(
-            spec, detector, rsp_file, arf_file, len(spec_channels)
+            spec, detector, det_filter, rsp_file, arf_file, len(spec_channels)
         )
 
         save_spec(spec, obsid, detid, detector, output_path)
