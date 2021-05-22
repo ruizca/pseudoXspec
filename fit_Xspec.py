@@ -10,26 +10,16 @@ import logging
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import matplotlib.gridspec
-import matplotlib.pyplot as plt
-import matplotlib.ticker
 import numpy as np
 import sherpa.astro.ui as shp
 from astropy import units as u
 from astropy.cosmology import Planck15 as cosmo
-from scipy.stats import binned_statistic
 from sherpa.astro import datastack as dsmod
 
-# from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import plots
 
 
-# plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
-plt.rc("axes.formatter", limits=(-3, 3))
-plt.style.use("bmh")
-
-
-def set_sherpa_env():
+def set_sherpa_env(stat=None):
     shp.clean()
     dsmod.clean()
 
@@ -37,7 +27,9 @@ def set_sherpa_env():
     shp.set_conf_opt("numcores", 4)
     shp.set_proj_opt("sigma", 1.6)
     shp.set_proj_opt("numcores", 4)
-    # shp.set_preference("window.display", "false")
+
+    if stat:
+        shp.set_stat(stat)
 
 
 def parseargs(args):
@@ -84,7 +76,6 @@ def load_stack_data(obsid, detid, spectra_path):
     ids = shp.list_data_ids()
     for id in ids:
         dsmod.ignore_bad(id=id)
-        # dsmod.ignore_id(id, ":0.2,12.0:")
 
     return ds, ids
 
@@ -383,127 +374,6 @@ def save_fluxes(dict_fluxes, prefix):
         json.dump(dict_fluxes, json_file, indent=2)
 
 
-def ticks_format(value, index):
-    """
-    get the value and returns the value as:
-       integer: [0,99]
-       1 digit float: [0.1, 0.99]
-       n*10^m: otherwise
-    To have all the number of the same size they are all returned as latex strings
-    """
-    exp = np.floor(np.log10(value))
-    base = value / 10 ** exp
-    if exp == 0 or exp == 1:
-        return r"${0:d}$".format(int(value))
-    if exp == -1:
-        return r"${0:.1f}$".format(value)
-    else:
-        if base == 1:
-            return r"$10^{{{0:d}}}$".format(int(exp))
-        else:
-            return r"${0:d}\times10^{{{1:d}}}$".format(int(base), int(exp))
-
-
-def plot_spec_fit(ids, emin=0, emax=np.inf, prefix=None):
-    all_model = []
-    all_emodel = []
-    all_data = []
-    all_dataxerr = []
-    all_datayerr = []
-    all_edata = []
-    all_ratio = []
-    all_ratioerr = []
-
-    # Get data and model for each spectrum
-    for sid in ids:
-        d = shp.get_data_plot(sid)
-        m = shp.get_model_plot(sid)
-        e = (m.xhi + m.xlo) / 2
-        bins = np.concatenate((d.x - d.xerr / 2, [d.x[-1] + d.xerr[-1]]))
-
-        model = m.y
-        model_de = model * (m.xhi - m.xlo)
-        model_binned, foo1, foo2 = binned_statistic(
-            e, model_de, bins=bins, statistic="sum"
-        )
-        model_binned = model_binned / d.xerr
-
-        # delchi = resid/d.yerr
-        ratio = d.y / model_binned
-
-        mask_data = np.logical_and(d.x + d.xerr / 2 >= emin, d.x - d.xerr / 2 <= emax)
-        mask_model = np.logical_and(e >= emin, e <= emax)
-
-        all_model.append(model[mask_model])
-        all_emodel.append(e[mask_model])
-        all_data.append(d.y[mask_data])
-        all_dataxerr.append(d.xerr[mask_data])
-        all_datayerr.append(d.yerr[mask_data])
-        all_edata.append(d.x[mask_data])
-        all_ratio.append(ratio[mask_data])
-        all_ratioerr.append(d.yerr[mask_data] / model_binned[mask_data])
-
-    # Show all spectra in one plot
-    fig = plt.figure()
-    gs = matplotlib.gridspec.GridSpec(2, 1, height_ratios=[3, 1])
-
-    ax0 = plt.subplot(gs[0])
-    for i in range(len(ids)):
-        ax0.errorbar(
-            all_edata[i],
-            all_data[i],
-            xerr=all_dataxerr[i] / 2,
-            yerr=all_datayerr[i],
-            fmt="o",
-            ms=5,
-            elinewidth=1.25,
-            capsize=2,
-            ls="None",
-            zorder=1000,
-        )
-        ax0.loglog(all_emodel[i], all_model[i], c="red", alpha=0.5)
-
-    ax0.set_ylabel(r"count rate / $\mathrm{s}^{-1}\:\mathrm{keV}^{-1}$")
-    ax0.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(ticks_format))
-
-    ax1 = plt.subplot(gs[1], sharex=ax0)
-    for i in range(len(ids)):
-        ax1.errorbar(
-            all_edata[i],
-            all_ratio[i],
-            xerr=all_dataxerr[i] / 2,
-            yerr=all_ratioerr[i],
-            elinewidth=1.25,
-            capsize=2,
-            ls="None",
-            zorder=1000,
-        )
-
-    ax1.axhline(1, ls="--", c="gray")
-
-    plt.setp(ax0.get_xticklabels(), visible=False)
-
-    ax1.set_yscale("log")
-    ax1.set_xlabel("Energy / keV")
-    ax1.set_ylabel("ratio")
-
-    ax1.xaxis.set_major_locator(matplotlib.ticker.LogLocator(subs=(1.0, 2.0, 5.0)))
-    ax1.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(ticks_format))
-    ax1.yaxis.set_major_locator(matplotlib.ticker.LogLocator(subs=(1.0, 3.0, 5.0)))
-    ax1.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(ticks_format))
-    ax1.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-
-    plt.xlim(emin, emax)
-    plt.tight_layout()
-
-    if prefix:
-        fig.savefig(f"{prefix}_srcspec_ALL.png")
-    else:
-        fig.show()
-
-    plt.close(fig)
-
-
 def main(args):
     logger = logging.getLogger("sherpa")
     logger.setLevel(logging.ERROR)
@@ -526,7 +396,7 @@ def main(args):
     save_params(params, prefix)
     save_goodness(prefix)
 
-    plot_spec_fit(ids, emin=0.2, emax=12.0, prefix=prefix)
+    plots.spectra_bestfit(ids, emin=0.2, emax=12.0, prefix=prefix)
 
     fluxes = get_fluxes(ids, z, fluxes, fitstats, nsims=10)
     fluxes = get_luminosities(z, fluxes)
